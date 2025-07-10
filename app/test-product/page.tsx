@@ -1,26 +1,23 @@
 "use client"
-export const dynamic = "force-dynamic"
+export const dynamic = "force-dynamic" // Disable static generation
 
+import dynamic from "next/dynamic"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { ARViewer } from "@/components/ar-viewer"
 import { sampleProducts } from "@/lib/sample-data"
+
+// Dynamically load ARViewer to avoid SSR issues
+const ARViewer = dynamic(() => import("@/components/ar-viewer"), { ssr: false })
 
 export default function TestProductPage() {
   const [isAROpen, setIsAROpen] = useState(false)
 
-  // Get the dining table product (ID 2)
-  const diningTable = sampleProducts.find((p) => p.id === 2) || sampleProducts?.[1]
+  const diningTable = sampleProducts?.find((p) => p.id === 2) || sampleProducts?.[0]
 
   if (!diningTable) {
     return (
-      <div className="min-h-screen bg-gray-50 p-8">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-3xl font-bold mb-8">Test Product Page</h1>
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <p className="text-red-500 font-semibold">No product found to display.</p>
-          </div>
-        </div>
+      <div className="p-8 text-red-600 font-semibold">
+        Product not found.
       </div>
     )
   }
@@ -35,18 +32,10 @@ export default function TestProductPage() {
           <p className="text-gray-600 mb-4">{diningTable.description}</p>
 
           <div className="grid grid-cols-2 gap-4 mb-6">
-            <div>
-              <strong>Dimensions:</strong> {diningTable.dimensions}
-            </div>
-            <div>
-              <strong>Category:</strong> {diningTable.category}
-            </div>
-            <div>
-              <strong>Material:</strong> {diningTable.material}
-            </div>
-            <div>
-              <strong>AR Model:</strong> {diningTable.arModel}
-            </div>
+            <div><strong>Dimensions:</strong> {diningTable.dimensions}</div>
+            <div><strong>Category:</strong> {diningTable.category}</div>
+            <div><strong>Material:</strong> {diningTable.material}</div>
+            <div><strong>AR Model:</strong> {diningTable.arModel}</div>
           </div>
 
           <Button onClick={() => setIsAROpen(true)} className="bg-blue-600 hover:bg-blue-700">
