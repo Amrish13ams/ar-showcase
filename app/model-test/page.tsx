@@ -1,11 +1,11 @@
 "use client"
 
-import dynamic from "next/dynamic"
+import dynamicImport from "next/dynamic" // ✅ Rename the import to avoid conflict
 import { Button } from "@/components/ui/button"
 
-export const dynamic = "force-dynamic" // Tell Next.js not to prerender statically
+export const dynamic = "force-dynamic" // ✅ This is for Next.js, leave as-is
 
-const ModelViewer = dynamic(() => import("./viewer"), { ssr: false })
+const ModelViewer = dynamicImport(() => import("./viewer"), { ssr: false })
 
 export default function ModelTestPage() {
   return (
