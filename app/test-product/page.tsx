@@ -1,12 +1,11 @@
 "use client"
-export const dynamic = "force-dynamic" // Disable static generation
+export const dynamicParam = "force-dynamic" // renamed to avoid conflict
 
 import dynamic from "next/dynamic"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { sampleProducts } from "@/lib/sample-data"
 
-// Dynamically load ARViewer to avoid SSR issues
 const ARViewer = dynamic(() => import("@/components/ar-viewer"), { ssr: false })
 
 export default function TestProductPage() {
