@@ -1,5 +1,5 @@
 "use client"
-
+export const dynamic = "force-dynamic" // Disable static generation
 import { useState, useEffect, useCallback } from "react"
 import { DashboardLayout } from "@/components/layouts/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
