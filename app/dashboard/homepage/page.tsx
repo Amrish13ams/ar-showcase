@@ -1,5 +1,6 @@
 "use client"
 export const dynamic = "force-dynamic" // Disable static generation
+import * as LucideIcons from "lucide-react"
 import { useState, useEffect, useCallback } from "react"
 import { DashboardLayout } from "@/components/layouts/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -105,7 +106,14 @@ export default function HomepageEditor() {
   const [lastSaved, setLastSaved] = useState<string | null>(null)
   const [isInitialized, setIsInitialized] = useState(false)
   const [debugMode, setDebugMode] = useState(false)
-  const [storageInfo, setStorageInfo] = useState<any>(null)
+  interface StorageInfo {
+    hasGlobalData: boolean
+    globalDataTimestamp: string
+    saveHistoryCount: number
+    lastSaveAttempt?: { success: boolean; timestamp: string; error?: string }
+    recentSaves?: { success: boolean; timestamp: string; error?: string }[]
+  }
+  const [storageInfo, setStorageInfo] = useState<StorageInfo | null>(null)
 
   // Hero Section State
   const [heroSection, setHeroSection] = useState<HeroSection>({
@@ -179,8 +187,7 @@ export default function HomepageEditor() {
         }
 
         // Update storage info after loading
-        setStorageInfo(getStorageInfo())
-      } catch (error) {
+        updateStorageInfo()      } catch (error) {
         console.error("❌ Error loading homepage data:", error)
         toast({
           title: "Error Loading Data",
@@ -243,8 +250,7 @@ export default function HomepageEditor() {
         setLastSaved(dataToSave.lastUpdated)
 
         // Update storage info after successful save
-        setStorageInfo(getStorageInfo())
-
+        updateStorageInfo()
         toast({
           title: "✅ Homepage Saved Successfully!",
           description: "Your homepage changes have been saved and are now live.",
@@ -264,8 +270,7 @@ export default function HomepageEditor() {
     } finally {
       setIsSaving(false)
       // Update storage info regardless of save result
-      setStorageInfo(getStorageInfo())
-    }
+      updateStorageInfo()    }
   }, [heroSection, features, featuredProducts, statsSection, trustIndicators, seoSettings, toast, addNotification]) // FIXED: Removed updateStorageInfo from dependencies
 
   const handlePreview = useCallback(() => {
@@ -567,9 +572,27 @@ export default function HomepageEditor() {
                           onChange={(e) => setHeroSection((prev) => ({ ...prev, backgroundImage: e.target.value }))}
                           placeholder="/images/hero-bg.jpg"
                         />
-                        <Button variant="outline" size="sm">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              const imageUrl = URL.createObjectURL(file)
+                              setHeroSection((prev) => ({ ...prev, backgroundImage: imageUrl }))
+                            }
+                          }}
+                          className="hidden"
+                          ref={bgImageInputRef}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => bgImageInputRef.current?.click()}
+                        >
                           <Upload className="h-4 w-4" />
                         </Button>
+
                       </div>
                     </div>
                     <div>
@@ -581,9 +604,27 @@ export default function HomepageEditor() {
                           onChange={(e) => setHeroSection((prev) => ({ ...prev, logoImage: e.target.value }))}
                           placeholder="/images/logo.png"
                         />
-                        <Button variant="outline" size="sm">
-                          <Upload className="h-4 w-4" />
-                        </Button>
+                        <input
+  type="file"
+  accept="image/*"
+  onChange={(e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const imageUrl = URL.createObjectURL(file)
+      setHeroSection((prev) => ({ ...prev, backgroundImage: imageUrl }))
+    }
+  }}
+  className="hidden"
+  ref={bgImageInputRef}
+/>
+<Button
+  variant="outline"
+  size="sm"
+  onClick={() => bgImageInputRef.current?.click()}
+>
+  <Upload className="h-4 w-4" />
+</Button>
+
                       </div>
                     </div>
                   </div>
@@ -613,7 +654,12 @@ export default function HomepageEditor() {
                     <Card key={feature.id} className="p-4">
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline">Feature {index + 1}</Badge>
+                        {LucideIcons[feature.icon as keyof typeof LucideIcons] ? (
+  React.createElement(LucideIcons[feature.icon as keyof typeof LucideIcons], { className: "h-5 w-5 mr-2" })
+) : (
+  <Star className="h-5 w-5 mr-2" />
+)}
+<Badge variant="outline">Feature {index + 1}</Badge>
                           <Switch
                             checked={feature.enabled}
                             onCheckedChange={(checked) => updateFeature(feature.id, { enabled: checked })}
@@ -757,9 +803,27 @@ export default function HomepageEditor() {
                               onChange={(e) => updateProduct(product.id, { image: e.target.value })}
                               placeholder="/images/product.png"
                             />
-                            <Button variant="outline" size="sm">
-                              <Upload className="h-4 w-4" />
-                            </Button>
+                            <input
+  type="file"
+  accept="image/*"
+  onChange={(e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const imageUrl = URL.createObjectURL(file)
+      setHeroSection((prev) => ({ ...prev, backgroundImage: imageUrl }))
+    }
+  }}
+  className="hidden"
+  ref={bgImageInputRef}
+/>
+<Button
+  variant="outline"
+  size="sm"
+  onClick={() => bgImageInputRef.current?.click()}
+>
+  <Upload className="h-4 w-4" />
+</Button>
+
                           </div>
                         </div>
                       </div>
@@ -997,9 +1061,27 @@ export default function HomepageEditor() {
                       onChange={(e) => setSeoSettings((prev) => ({ ...prev, ogImage: e.target.value }))}
                       placeholder="/images/og-image.jpg"
                     />
-                    <Button variant="outline" size="sm">
-                      <Upload className="h-4 w-4" />
-                    </Button>
+                    <input
+  type="file"
+  accept="image/*"
+  onChange={(e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const imageUrl = URL.createObjectURL(file)
+      setHeroSection((prev) => ({ ...prev, backgroundImage: imageUrl }))
+    }
+  }}
+  className="hidden"
+  ref={bgImageInputRef}
+/>
+<Button
+  variant="outline"
+  size="sm"
+  onClick={() => bgImageInputRef.current?.click()}
+>
+  <Upload className="h-4 w-4" />
+</Button>
+
                   </div>
                 </div>
               </CardContent>
@@ -1019,7 +1101,9 @@ export default function HomepageEditor() {
                     : "All changes are saved and live on your homepage."}
                 </p>
                 {lastSaved && (
-                  <p className="text-sm text-gray-500 mt-1">Last saved: {new Date(lastSaved).toLocaleString()}</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                  Last saved: {new Date(lastSaved).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+                </p>
                 )}
               </div>
               <div className="flex gap-3">
