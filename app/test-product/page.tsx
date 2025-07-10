@@ -1,4 +1,5 @@
 "use client"
+export const dynamic = "force-dynamic"
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -9,7 +10,20 @@ export default function TestProductPage() {
   const [isAROpen, setIsAROpen] = useState(false)
 
   // Get the dining table product (ID 2)
-  const diningTable = sampleProducts.find((p) => p.id === 2) || sampleProducts[1]
+  const diningTable = sampleProducts.find((p) => p.id === 2) || sampleProducts?.[1]
+
+  if (!diningTable) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-8">
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-3xl font-bold mb-8">Test Product Page</h1>
+          <div className="bg-white rounded-lg shadow-lg p-6">
+            <p className="text-red-500 font-semibold">No product found to display.</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
