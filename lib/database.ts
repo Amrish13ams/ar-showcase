@@ -9,9 +9,10 @@ import { getSignedUrl } from "@aws-sdk/s3-request-presigner"
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
-    rejectUnauthorized: process.env.NODE_ENV === "production", // true in prod, false in dev
+    rejectUnauthorized: false, // true in prod, false in dev
   },
 });
+ console.log(`env data ${process.env.NODE_ENV}`)
 
 export interface Company {
   id: number
