@@ -445,7 +445,7 @@ class DatabaseManager {
     // Setup Backblaze S3-compatible client
     const s3Client = new S3Client({
       region: "us-west-004",
-      endpoint: "https://s3.us-west-004.backblazeb2.com",
+      endpoint: "https://s3.us-east-005.backblazeb2.com",
       credentials: {
         accessKeyId: process.env.B2_KEY_ID!,
         secretAccessKey: process.env.B2_APPLICATION_KEY!,
@@ -483,16 +483,23 @@ class DatabaseManager {
     // Return products with signed URLs
     const products = await Promise.all(
       result.rows.map(async (row) => {
-        const getImageUrl = async (filePath: string | null) => {
-          if (!filePath) return null;
-    
-          // Friendly URL format
-          const friendlyUrl = `https://f005.backblazeb2.com/file/ar-showcase-storage/${filePath}`;
-    
-          // Since the bucket is private, use generateSignedUrl() to sign the friendly path
-          // generateSignedUrl must return a signed URL for Backblaze B2 private bucket
-          return await generateSignedUrl(filePath); // OR: sign the full friendlyUrl if needed
+        const getImageUrl = async (key: string | null) => {
+          if (!key) return null;
+        
+          try {
+            const command = new GetObjectCommand({
+              Bucket: process.env.B2_BUCKET_NAME!,
+              Key: key, // This must match what's in the DB
+            });
+        
+            const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1 hour
+            return signedUrl;
+          } catch (error) {
+            console.error(`Error signing URL for ${key}:`, error);
+            return null;
+          }
         };
+        
     
         const imageFiles = [row.image_1, row.image_2, row.image_3, row.image_4].filter(Boolean);
         const signedImages = await Promise.all(imageFiles.map((file) => getImageUrl(file)));
@@ -557,6 +564,23 @@ class DatabaseManager {
   }
 
   async getProduct(id: number): Promise<Product | null> {
+    const s3Client = new S3Client({
+      region: "us-west-004",
+      endpoint: "https://s3.us-east-005.backblazeb2.com",
+      credentials: {
+        accessKeyId: process.env.B2_KEY_ID!,
+        secretAccessKey: process.env.B2_APPLICATION_KEY!,
+      },
+    })
+
+    // Inline helper to generate signed URL
+    const generateSignedUrl = async (key: string, expiresIn = 3600) => {
+      const command = new GetObjectCommand({
+        Bucket: process.env.B2_BUCKET_NAME!,
+        Key: key,
+      })
+      return await getSignedUrl(s3Client, command, { expiresIn })
+    }
     const result = await pool.query(
       `
       SELECT p.*, c.shop_name as company_name, c.subdomain as company_subdomain, c.description as company_description, c.logo as company_logo
@@ -566,12 +590,31 @@ class DatabaseManager {
     `,
       [id],
     )
+    const getImageUrl = async (key: string | null) => {
+      if (!key) return null;
+    
+      try {
+        const command = new GetObjectCommand({
+          Bucket: process.env.B2_BUCKET_NAME!,
+          Key: key, // This must match what's in the DB
+        });
+    
+        const signedUrl = await getSignedUrl(s3Client, command, { expiresIn: 3600 }); // 1 hour
+        return signedUrl;
+      } catch (error) {
+        console.error(`Error signing URL for ${key}:`, error);
+        return null;
+      }
+    };
+    
 
     if (result.rows.length === 0) {
       return null
     }
 
     const row = result.rows[0]
+    const imageFiles = [row.image_1, row.image_2, row.image_3, row.image_4].filter(Boolean);
+    const signedImages = await Promise.all(imageFiles.map((file) => getImageUrl(file)));
     return {
       id: row.id,
       name: row.name,
@@ -594,11 +637,11 @@ class DatabaseManager {
         logo: row.company_logo,
       },
       category: row.category,
-      images: [row.image_1, row.image_2, row.image_3, row.image_4].filter(Boolean),
-      image_1: row.image_1,
-      image_2: row.image_2,
-      image_3: row.image_3,
-      image_4: row.image_4,
+      images: signedImages,
+      image_1: await getImageUrl(row.image_1),
+      image_2: await getImageUrl(row.image_2),
+      image_3: await getImageUrl(row.image_3),
+      image_4: await getImageUrl(row.image_4),
       dimensions: row.dimensions,
       weight: row.weight,
       material: row.material,
