@@ -1,24 +1,26 @@
-# Use Node 18 as base image
 FROM node:18
 
-# Install required build tools for libpq and enable pnpm
+# Install system dependencies
 RUN apt-get update && \
     apt-get install -y python3 make g++ libpq-dev && \
     corepack enable && \
     corepack prepare pnpm@latest --activate
 
-# Set working directory in container
+# Set working directory
 WORKDIR /app
 
-# Copy only package definition files and install deps
+# Copy only dependency files first (for caching)
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install
 
-# Copy the rest of your codebase
+# Copy the rest of the app
 COPY . .
 
-# Expose your app’s port (change if needed)
+# 🔧 Build the production app
+RUN pnpm build
+
+# Expose port (Next.js uses 3000 by default)
 EXPOSE 3000
 
-# Start the app (change if your entry point is different)
+# Start the production server
 CMD ["pnpm", "start"]
