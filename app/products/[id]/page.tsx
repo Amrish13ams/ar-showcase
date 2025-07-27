@@ -77,22 +77,50 @@ export default function ProductPage() {
       if (!res.ok) throw new Error("Company not found")
       const company = await res.json()
       setCompanyDetails(company)
-      console.log("📱 Company WhatsApp:", company.company.whatsapp) 
+      console.log("📱 Company WhatsApp:", product.featured) 
     } catch (err) {
       console.error("❌ Failed to fetch company by subdomain", err)
     }
   }
   
-  const handleBuyNow = () => {
-    if (!product || !companyDetails?.whatsapp) return
+  const handleBuyNow = async () => {
+    try {
+      console.log("🛒 Buy Now clicked")
   
-    const message = `Hi, I'm interested in buying *${product.name}* (Product ID: ${product.id}). Please share more details.`
-    const encodedMessage = encodeURIComponent(message)
-    const whatsappNumber = companyDetails.whatsapp.replace(/\D/g, "") // sanitize
+      // Re-fetch product (in case of stale state)
+      const productRes = await fetch(`/api/products/${params.id}`)
+      if (!productRes.ok) throw new Error("Failed to fetch product")
+      const freshProduct = await productRes.json()
   
-    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`
-    window.open(whatsappUrl, "_blank")
+      // Re-fetch company
+      const subdomain = freshProduct.company?.subdomain
+      const companyRes = await fetch(`/api/companies/${subdomain}`)
+      if (!companyRes.ok) throw new Error("Failed to fetch company")
+      const freshCompany = await companyRes.json()
+  
+      console.log("📦 Fresh Product:", freshProduct)
+      console.log("🏢 Fresh Company:", freshCompany)
+  
+      const message = `Hi, I'm interested in buying *${freshProduct.name}* (Product ID: ${freshProduct.id}). Please share more details.`
+      const encodedMessage = encodeURIComponent(message)
+      const rawNumber = freshCompany.company.whatsapp
+      const whatsappNumber = rawNumber.replace(/\D/g, "")
+      const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`
+  
+      console.log("📨 WhatsApp Message:", message)
+      console.log("🌐 Redirecting to:", whatsappUrl)
+  
+      window.open(whatsappUrl, "_blank")
+    } catch (err) {
+      console.error("❌ Error in handleBuyNow:", err)
+      toast({
+        title: "Error",
+        description: "Unable to contact seller via WhatsApp",
+        variant: "destructive",
+      })
+    }
   }
+  
   
 
   const fetchProduct = async (id: string) => {
