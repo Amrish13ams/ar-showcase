@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
+
 import {
   Eye,
   ArrowLeft,
@@ -62,25 +63,52 @@ export default function ProductPage() {
   const [loading, setLoading] = useState(true)
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isLiked, setIsLiked] = useState(false)
+  const [companyDetails, setCompanyDetails] = useState<any | null>(null)
+
 
   useEffect(() => {
     if (params.id) {
       fetchProduct(params.id as string)
     }
   }, [params.id])
+  const fetchCompanyBySubdomain = async (subdomain: string) => {
+    try {
+      const res = await fetch(`/api/companies/${subdomain}`)
+      if (!res.ok) throw new Error("Company not found")
+      const company = await res.json()
+      setCompanyDetails(company)
+      console.log("📱 Company WhatsApp:", company.company.whatsapp) 
+    } catch (err) {
+      console.error("❌ Failed to fetch company by subdomain", err)
+    }
+  }
+  
+  const handleBuyNow = () => {
+    if (!product || !companyDetails?.whatsapp) return
+  
+    const message = `Hi, I'm interested in buying *${product.name}* (Product ID: ${product.id}). Please share more details.`
+    const encodedMessage = encodeURIComponent(message)
+    const whatsappNumber = companyDetails.whatsapp.replace(/\D/g, "") // sanitize
+  
+    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`
+    window.open(whatsappUrl, "_blank")
+  }
+  
 
   const fetchProduct = async (id: string) => {
     try {
       console.log(`🛍️ Fetching product: ${id}`)
       const response = await fetch(`/api/products/${id}`)
-
-      if (!response.ok) {
-        throw new Error("Product not found")
-      }
-
+      if (!response.ok) throw new Error("Product not found")
+  
       const data = await response.json()
       console.log("📦 Product data:", data)
       setProduct(data)
+  
+      // Get company from subdomain
+      if (data?.company?.subdomain) {
+        fetchCompanyBySubdomain(data.company.subdomain)
+      }
     } catch (error) {
       console.error("Error fetching product:", error)
       toast({
@@ -93,6 +121,7 @@ export default function ProductPage() {
       setLoading(false)
     }
   }
+  
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-IN", {
@@ -203,14 +232,14 @@ export default function ProductPage() {
               <Button variant="outline" size="sm" onClick={handleShare}>
                 <Share2 className="h-4 w-4" />
               </Button>
-              <Button
+              {/* <Button
                 variant="outline"
                 size="sm"
                 onClick={handleLike}
                 className={isLiked ? "text-red-500 border-red-200" : ""}
               >
                 <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
-              </Button>
+              </Button> */}
             </div>
           </div>
         </div>
@@ -385,13 +414,13 @@ export default function ProductPage() {
             {/* Action Buttons */}
             <div className="space-y-4">
               <div className="flex space-x-4">
-                <Button
+                {/* <Button
                   size="lg"
                   className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg"
                 >
                   <ShoppingCart className="h-5 w-5 mr-2" />
                   Add to Cart
-                </Button>
+                </Button> */}
                 {product.has_ar && (
                   <Link href={`/products/${product.id}/ar`} className="flex-1">
                     <Button
@@ -406,13 +435,19 @@ export default function ProductPage() {
                 )}
               </div>
 
-              <Button size="lg" variant="outline" className="w-full bg-transparent">
-                Buy Now
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full bg-transparent"
+                onClick={handleBuyNow}
+              >
+                Buy Now whatsapp
               </Button>
+
             </div>
 
             {/* Features */}
-            <Card className="border-0 shadow-lg bg-gradient-to-r from-green-50 to-blue-50">
+            {/* <Card className="border-0 shadow-lg bg-gradient-to-r from-green-50 to-blue-50">
               <CardContent className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div className="flex items-center space-x-2">
@@ -429,7 +464,7 @@ export default function ProductPage() {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
 
             {/* Contact Information */}
             <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
@@ -445,14 +480,14 @@ export default function ProductPage() {
                     </p>
                   )}
                 </div>
-                <div className="flex space-x-2 mt-4">
+                {/* <div className="flex space-x-2 mt-4">
                   <Button variant="outline" size="sm">
                     Contact Store
                   </Button>
                   <Button variant="outline" size="sm">
                     View All Products
                   </Button>
-                </div>
+                </div> */}
               </CardContent>
             </Card>
           </div>

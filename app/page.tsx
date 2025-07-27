@@ -1,11 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Link from "next/link"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Eye, Sparkles, ShoppingBag, ArrowRight } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Eye, Sparkles, ShoppingBag, ArrowRight, Search, X } from "lucide-react"
 
 interface Product {
   id: number
@@ -36,6 +37,7 @@ export default function HomePage() {
   const [company, setCompany] = useState<Company | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState("")
 
   useEffect(() => {
     fetchData()
@@ -104,12 +106,34 @@ export default function HomePage() {
     }
   }
 
+  // Filter products based on search query
+  const filteredProducts = useMemo(() => {
+    if (!searchQuery.trim()) return products
+
+    const query = searchQuery.toLowerCase()
+    return products.filter(
+      (product) =>
+        product.name.toLowerCase().includes(query) ||
+        product.description?.toLowerCase().includes(query) ||
+        product.category?.toLowerCase().includes(query)
+    )
+  }, [products, searchQuery])
+
+  // Get featured products from filtered results
+  const filteredFeaturedProducts = useMemo(() => {
+    return filteredProducts.filter((p) => p.featured).slice(0, 3)
+  }, [filteredProducts])
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
       currency: "INR",
       maximumFractionDigits: 0,
     }).format(price)
+  }
+
+  const clearSearch = () => {
+    setSearchQuery("")
   }
 
   if (loading) {
@@ -155,7 +179,9 @@ export default function HomePage() {
                 <Sparkles className="h-4 w-4 mr-1" />
                 AR Enabled
               </Badge>
-              <div className="text-sm text-gray-500 bg-white/50 px-3 py-1 rounded-full">{products.length} Products</div>
+              <div className="text-sm text-gray-500 bg-white/50 px-3 py-1 rounded-full">
+                {searchQuery ? `${filteredProducts.length} of ${products.length}` : `${products.length}`} Products
+              </div>
             </div>
           </div>
         </div>
@@ -173,6 +199,36 @@ export default function HomePage() {
             {company?.description || "Experience our products in AR - See how they look in your space before you buy"}
           </p>
 
+          {/* Search Bar */}
+          <div className="max-w-2xl mx-auto mb-8">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              <Input
+                type="text"
+                placeholder="Search products, categories, or descriptions..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-12 pr-12 py-4 text-lg bg-white/90 backdrop-blur-sm border-0 shadow-lg rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              />
+              {searchQuery && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              )}
+            </div>
+            {searchQuery && (
+              <p className="text-sm text-gray-600 mt-3">
+                {filteredProducts.length === 0 
+                  ? "No products found matching your search" 
+                  : `Found ${filteredProducts.length} product${filteredProducts.length !== 1 ? 's' : ''} matching "${searchQuery}"`
+                }
+              </p>
+            )}
+          </div>
+
           {error && (
             <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6 max-w-md mx-auto shadow-sm">
               <p className="text-yellow-800 text-sm">⚠️ {error}</p>
@@ -183,7 +239,8 @@ export default function HomePage() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg"
+                disabled
+                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg opacity-60 cursor-not-allowed"
               >
                 <ShoppingBag className="h-5 w-5 mr-2" />
                 Shop Now
@@ -191,27 +248,45 @@ export default function HomePage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="border-purple-200 text-purple-600 hover:bg-purple-50 bg-transparent"
+                disabled
+                className="border-purple-200 text-purple-600 bg-transparent opacity-60 cursor-not-allowed"
               >
                 <Eye className="h-5 w-5 mr-2" />
                 Try AR Experience
               </Button>
             </div>
           )}
+
         </div>
       </div>
 
       {/* Products Grid */}
       <main className="container mx-auto px-4 py-16">
-        {products.length === 0 ? (
+        {filteredProducts.length === 0 ? (
           <div className="text-center py-20">
             <div className="bg-white/50 backdrop-blur-sm rounded-2xl p-12 max-w-md mx-auto shadow-lg">
-              <Sparkles className="h-16 w-16 text-gray-400 mx-auto mb-6" />
-              <h2 className="text-2xl font-semibold text-gray-900 mb-3">No Products Available</h2>
-              <p className="text-gray-600 mb-6">This store is being set up. Check back later for amazing products!</p>
-              {company?.phone && (
+              <Search className="h-16 w-16 text-gray-400 mx-auto mb-6" />
+              <h2 className="text-2xl font-semibold text-gray-900 mb-3">
+                {searchQuery ? "No Products Found" : "No Products Available"}
+              </h2>
+              <p className="text-gray-600 mb-6">
+                {searchQuery 
+                  ? `No products match "${searchQuery}". Try a different search term.`
+                  : "This store is being set up. Check back later for amazing products!"
+                }
+              </p>
+              {searchQuery && (
+                <Button 
+                  onClick={clearSearch} 
+                  variant="outline" 
+                  className="mb-4 border-purple-200 text-purple-600"
+                >
+                  Clear Search
+                </Button>
+              )}
+              {company?.phone && !searchQuery && (
                 <div className="text-sm text-gray-500">
-                  <p>Contact: {company.phone}</p>
+                  <p>Contact:<strong> {company.shop_name}</strong> </p>
                 </div>
               )}
             </div>
@@ -219,108 +294,110 @@ export default function HomePage() {
         ) : (
           <>
             {/* Featured Products Section */}
-            {products.some((p) => p.featured) && (
+            {filteredFeaturedProducts.length > 0 && (
               <div className="mb-16">
                 <div className="text-center mb-12">
-                  <h3 className="text-3xl font-bold text-gray-900 mb-4">Featured Products</h3>
+                  <h3 className="text-3xl font-bold text-gray-900 mb-4">
+                    {searchQuery ? "Featured Search Results" : "Featured Products"}
+                  </h3>
                   <p className="text-gray-600 max-w-2xl mx-auto">
-                    Discover our handpicked selection of premium products with AR visualization
+                    {searchQuery 
+                      ? `Featured products matching "${searchQuery}"`
+                      : "Discover our handpicked selection of premium products with AR visualization"
+                    }
                   </p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {products
-                    .filter((p) => p.featured)
-                    .slice(0, 3)
-                    .map((product) => (
-                      <Card
-                        key={product.id}
-                        className="group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 bg-white/80 backdrop-blur-sm border-0 shadow-lg"
-                      >
-                        <CardContent className="p-0">
-                          <div className="relative overflow-hidden rounded-t-xl">
-                            <img
-                              src={product.images[0] || "/placeholder.svg?height=300&width=300&text=Product"}
-                              alt={product.name}
-                              className="w-full h-72 object-cover group-hover:scale-110 transition-transform duration-500"
-                            />
+                  {filteredFeaturedProducts.map((product) => (
+                    <Card
+                      key={product.id}
+                      className="group hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 bg-white/80 backdrop-blur-sm border-0 shadow-lg"
+                    >
+                      <CardContent className="p-0">
+                        <div className="relative overflow-hidden rounded-t-xl">
+                          <img
+                            src={product.images[0] || "/placeholder.svg?height=300&width=300&text=Product"}
+                            alt={product.name}
+                            className="w-full h-72 object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
 
-                            {/* Badges */}
-                            <div className="absolute top-4 left-4 flex flex-col gap-2">
-                              {product.discount_percentage > 0 && (
-                                <Badge className="bg-red-500 text-white shadow-lg">
-                                  {product.discount_percentage}% OFF
-                                </Badge>
-                              )}
-                              {product.has_ar && (
-                                <Badge className="bg-purple-500 text-white shadow-lg">
-                                  <Eye className="h-3 w-3 mr-1" />
-                                  AR
-                                </Badge>
-                              )}
-                              <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-lg">
-                                ⭐ Featured
+                          {/* Badges */}
+                          <div className="absolute top-4 left-4 flex flex-col gap-2">
+                            {product.discount_percentage > 0 && (
+                              <Badge className="bg-red-500 text-white shadow-lg">
+                                {product.discount_percentage}% OFF
                               </Badge>
-                            </div>
-
-                            {/* Quick AR Button */}
-                            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                              {product.has_ar && (
-                                <Link href={`/products/${product.id}/ar`}>
-                                  <Button size="sm" className="bg-purple-600 hover:bg-purple-700 shadow-lg">
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                </Link>
-                              )}
-                            </div>
-
-                            {/* Overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                          </div>
-
-                          <div className="p-6">
-                            <div className="flex items-start justify-between mb-3">
-                              <h3 className="font-bold text-lg text-gray-900 line-clamp-2 flex-1">{product.name}</h3>
-                            </div>
-
-                            {product.description && (
-                              <p className="text-sm text-gray-600 mb-4 line-clamp-2 leading-relaxed">
-                                {product.description}
-                              </p>
                             )}
+                            {product.has_ar && (
+                              <Badge className="bg-purple-500 text-white shadow-lg">
+                                <Eye className="h-3 w-3 mr-1" />
+                                AR
+                              </Badge>
+                            )}
+                            <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500 text-white shadow-lg">
+                              ⭐ Featured
+                            </Badge>
+                          </div>
 
-                            <div className="flex items-center justify-between mb-6">
-                              <div className="flex items-center space-x-2">
-                                {product.discount_price ? (
-                                  <>
-                                    <span className="text-xl font-bold text-gray-900">
-                                      {formatPrice(product.effective_price)}
-                                    </span>
-                                    <span className="text-sm text-gray-500 line-through">
-                                      {formatPrice(product.price)}
-                                    </span>
-                                  </>
-                                ) : (
-                                  <span className="text-xl font-bold text-gray-900">{formatPrice(product.price)}</span>
-                                )}
-                              </div>
+                          {/* Quick AR Button */}
+                          <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            {product.has_ar && (
+                              <Link href={`/products/${product.id}/ar`}>
+                                <Button size="sm" className="bg-purple-600 hover:bg-purple-700 shadow-lg">
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </Link>
+                            )}
+                          </div>
 
-                              {product.category && (
-                                <Badge variant="outline" className="text-xs border-purple-200 text-purple-600">
-                                  {product.category}
-                                </Badge>
+                          {/* Overlay */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        </div>
+
+                        <div className="p-6">
+                          <div className="flex items-start justify-between mb-3">
+                            <h3 className="font-bold text-lg text-gray-900 line-clamp-2 flex-1">{product.name}</h3>
+                          </div>
+
+                          {product.description && (
+                            <p className="text-sm text-gray-600 mb-4 line-clamp-2 leading-relaxed">
+                              {product.description}
+                            </p>
+                          )}
+
+                          <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center space-x-2">
+                              {product.discount_price ? (
+                                <>
+                                  <span className="text-xl font-bold text-gray-900">
+                                    {formatPrice(product.effective_price)}
+                                  </span>
+                                  <span className="text-sm text-gray-500 line-through">
+                                    {formatPrice(product.price)}
+                                  </span>
+                                </>
+                              ) : (
+                                <span className="text-xl font-bold text-gray-900">{formatPrice(product.price)}</span>
                               )}
                             </div>
 
-                            <Link href={`/products/${product.id}`} className="block">
-                              <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg">
-                                View Details
-                                <ArrowRight className="h-4 w-4 ml-2" />
-                              </Button>
-                            </Link>
+                            {product.category && (
+                              <Badge variant="outline" className="text-xs border-purple-200 text-purple-600">
+                                {product.category}
+                              </Badge>
+                            )}
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+
+                          <Link href={`/products/${product.id}`} className="block">
+                            <Button className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg">
+                              View Details
+                              <ArrowRight className="h-4 w-4 ml-2" />
+                            </Button>
+                          </Link>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               </div>
             )}
@@ -328,11 +405,18 @@ export default function HomePage() {
             {/* All Products Section */}
             <div>
               <div className="text-center mb-12">
-                <h3 className="text-3xl font-bold text-gray-900 mb-4">All Products</h3>
-                <p className="text-gray-600 max-w-2xl mx-auto">Browse our complete collection of products</p>
+                <h3 className="text-3xl font-bold text-gray-900 mb-4">
+                  {searchQuery ? "Search Results" : "All Products"}
+                </h3>
+                <p className="text-gray-600 max-w-2xl mx-auto">
+                  {searchQuery 
+                    ? `Products matching "${searchQuery}"`
+                    : "Browse our complete collection of products"
+                  }
+                </p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {products.map((product) => (
+                {filteredProducts.map((product) => (
                   <Card
                     key={product.id}
                     className="group hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 bg-white/80 backdrop-blur-sm border-0 shadow-lg"
@@ -426,7 +510,7 @@ export default function HomePage() {
                 {company?.shop_name || "AR Showcase"}
               </h4>
               <p className="text-gray-600 mb-4">{company?.description || "Experience products in Augmented Reality"}</p>
-              {company?.phone && <p className="text-sm text-gray-500">📞 {company.phone}</p>}
+              {company?.phone && <p className="text-sm text-gray-500">📞 <strong> {company.phone} </strong> </p>}
             </div>
 
             <div>
