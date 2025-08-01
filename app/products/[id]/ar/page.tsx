@@ -258,18 +258,10 @@ export default function ARPage() {
                   <div className="h-48 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center mb-4">
                     <div className="text-gray-500">
                       {/* <Eye className="h-12 w-12 mx-auto mb-2" /> */}
-                      <model-viewer
-                          src={product.glb_file || "/placeholder.glb"}
-                          alt="3D model"
-                          auto-rotate
-                          disable-zoom
-                          camera-controls
-                          style={{ width: '100%', height: '200px', background: 'transparent' }}
-                          ar="false"
-                          ar-modes="webxr scene-viewer quick-look"
-                          interaction-prompt="none"
-                          exposure="1"
-                        ></model-viewer>
+                      <iframe
+                        src={product.glb_file}
+                        style={{ width: '100%', height: '200px', border: 'none' }}
+                      />
                     </div>
                   </div>
                   <p className="text-sm text-gray-600">
