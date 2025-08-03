@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect ,useRef} from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -87,6 +87,18 @@ export default function ARPage() {
       maximumFractionDigits: 0,
     }).format(price)
   }
+
+  const BabylonViewer = ({ glbUrl }: { glbUrl: string }) => {
+    const ref = useRef<HTMLDivElement>(null);
+  
+    useEffect(() => {
+      if (ref.current) {
+        ref.current.innerHTML = `<babylon model="${glbUrl}" templates.main.params.fill-screen="false"></babylon>`;
+      }
+    }, [glbUrl]);
+  
+    return <div ref={ref} style={{ width: "100%", height: "300px" }} />;
+  };
 
   const handleARView = () => {
     if (!product) return
@@ -258,10 +270,8 @@ export default function ARPage() {
                   <div className="h-48 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center mb-4">
                     <div className="text-gray-500">
                       {/* <Eye className="h-12 w-12 mx-auto mb-2" /> */}
-                      <iframe
-                        src={product.glb_file}
-                        style={{ width: '100%', height: '200px', border: 'none' }}
-                      />
+                      <BabylonViewer glbUrl={product.glb_file} />
+
                     </div>
                   </div>
                   <p className="text-sm text-gray-600">
