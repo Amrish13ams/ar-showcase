@@ -168,9 +168,9 @@ export default function HomePage() {
                 />
               )}
               <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  {company?.shop_name || "AR Showcase"}
-                </h1>
+              <h1 className="text-2xl font-bold text-black">
+                {company?.shop_name || "AR Showcase"}
+              </h1>
                 {company?.description && <p className="text-gray-600 text-sm">{company.description}</p>}
               </div>
             </div>
@@ -547,7 +547,7 @@ export default function HomePage() {
 
           <div className="border-t border-gray-200 mt-8 pt-8 text-center text-gray-600">
             <p>&copy; 2024 {company?.shop_name || "AR Showcase"}. All rights reserved.</p>
-            <p className="text-sm mt-2">Powered by AR Showcase Platform</p>
+            <p className="text-sm mt-2">Powered by MCSAK AR Solutions Ph: 6381612505</p>
           </div>
         </div>
       </footer>
